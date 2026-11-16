@@ -1,3 +1,4 @@
 app/data/
+qc/data/
 __pycache__/
 *.pyc

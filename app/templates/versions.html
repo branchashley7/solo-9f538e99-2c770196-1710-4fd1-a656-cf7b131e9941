@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>历史版次 · 任务 #{{ job.id }}</title>
+<style>
+ body{font-family:system-ui,"Noto Sans CJK SC",sans-serif;margin:2rem;color:#222}
+ table{border-collapse:collapse;width:100%;margin-top:1rem}
+ th,td{border:1px solid #ccc;padding:.35rem .6rem;font-size:.9rem;text-align:left}
+ th{background:#f0f4f8}
+ .cur{background:#ecfdf5;font-weight:600}
+ .ok{color:#047857}.warn{color:#b45309}
+ code{background:#f3f4f6;padding:0 .3rem}
+ button{padding:.3rem .8rem;cursor:pointer}
+ form.inline{display:inline}
+</style>
+</head>
+<body>
+<h1>源 <code>{{ job.url }}</code> 的历史版次</h1>
+<p><a href="{{ url_for('index') }}">← 返回采集台</a> ·
+   <a href="{{ url_for('submissions_page') }}">送检登记与回执</a></p>
+<p>当前稿只向新版前进：第 {{ current_rev }} 版为当前稿；各版原文与送检回执均可查。</p>
+<table>
+<tr><th>版次</th><th>ETag</th><th>行数</th><th>时刻范围 (UTC)</th><th>发布时间</th><th>送检状态</th><th>操作</th></tr>
+{% for v in versions %}
+<tr class="{{ 'cur' if v.revision == current_rev else '' }}">
+ <td>第 {{ v.revision }} 版{% if v.revision == current_rev %}（当前稿）{% endif %}</td>
+ <td><code>{{ v.etag }}</code></td>
+ <td>{{ v.row_count }}</td>
+ <td>{{ v.first_ts }} ~ {{ v.last_ts }}</td>
+ <td>{{ v.published_at }}</td>
+ <td>
+   {% set s = sub_idx.get((job.url, v.revision)) %}
+   {% if s %}
+     {% if s.status == 'confirmed' %}
+       <span class="ok">已确认 · <a href="{{ url_for('receipt_page', submission_id=s.submission_id) }}">回执 {{ s.receipt_id }}</a></span>
+     {% else %}
+       <span class="warn">待确认 · {{ s.last_error or '等待回执' }}</span>
+     {% endif %}
+     <br><small>送检号 <code>{{ s.submission_id }}</code></small>
+   {% else %}<span>未送检</span>{% endif %}
+ </td>
+ <td><a href="{{ url_for('version_csv', job_id=job.id, revision=v.revision) }}">该版原文 CSV</a></td>
+</tr>
+{% else %}
+<tr><td colspan="7">尚无已发布版次</td></tr>
+{% endfor %}
+</table>
+</body>
+</html>

@@ -31,7 +31,8 @@
   源 URL：<input type="text" name="url" value="{{ sample_url }}" placeholder="http://source:9000/tide.csv" required>
   <button type="submit">启动 / 继续采集</button>
 </form>
-<p><small>断网或重启后再次点击即可从已确认字节续传；源换版或忽略 Range 时会自动舍弃旧前缀整体重收。只有整份到齐且通过 CSV 校验才替换可用观测。</small></p>
+<p><small>断网或重启后再次点击即可从已确认字节续传；源换版或忽略 Range 时会自动舍弃旧前缀整体重收。只有整份到齐且通过 CSV 校验才替换可用观测，同源每次成功替换版次 +1。</small></p>
+<p><a href="{{ url_for('submissions_page') }}">送检登记与回执（含待确认恢复）→</a>　质控接收端：<code>{{ qc_base_url }}</code></p>
 <table>
 <tr><th>#</th><th>源 URL</th><th>状态</th><th>进度（已确认/总长）</th><th>ETag</th><th>信息</th><th>已发布观测</th><th>操作</th></tr>
 {% for j in jobs %}
@@ -55,13 +56,23 @@
    {% set o = obs[j.url] %}
    {% if o %}
      <a href="{{ url_for('observation', job_id=j.id) }}">{{ o.row_count }} 行</a>
-     ({{ o.first_ts }} ~ {{ o.last_ts }})
-     <a href="{{ url_for('observation_csv', job_id=j.id) }}">CSV</a>
+     ({{ o.first_ts }} ~ {{ o.last_ts }})<br>
+     <a href="{{ url_for('observation_csv', job_id=j.id) }}">当前稿 CSV</a>
+     · <a href="{{ url_for('versions_page', job_id=j.id) }}">历史版次</a>
+     · <b>第 {{ o.revision }} 版</b>
+     {% set s = sub_idx.get((j.url, o.revision)) %}
+     {% if s %}
+       <br><span class="st-{{ 'done' if s.status == 'confirmed' else 'interrupted' }}">
+       送检 {{ s.status }}
+       {% if s.status == 'confirmed' %}（<a href="{{ url_for('receipt_page', submission_id=s.submission_id) }}">回执 {{ s.receipt_id }}</a>）{% endif %}
+       </span>
+     {% endif %}
    {% else %}—{% endif %}
  </td>
  <td>
    <form class="inline" method="post" action="{{ url_for('start', job_id=j.id) }}"><button>启动/继续</button></form>
    <form class="inline" method="post" action="{{ url_for('reset', job_id=j.id) }}"><button>重置断点</button></form>
+   <form class="inline" method="post" action="{{ url_for('submit_job', job_id=j.id) }}"><button>送检当前观测</button></form>
  </td>
 </tr>
 {% endfor %}

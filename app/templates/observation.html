@@ -13,10 +13,11 @@
 </head>
 <body>
 <h1>已发布观测 — 任务 #{{ job.id }}</h1>
-<p><a href="{{ url_for('index') }}">← 返回任务列表</a></p>
+<p><a href="{{ url_for('index') }}">← 返回任务列表</a> ·
+   <a href="{{ url_for('versions_page', job_id=job.id) }}">历史版次与各版送检状态</a></p>
 <ul>
  <li>源：<code>{{ job.url }}</code></li>
- <li>版本 ETag：<code>{{ obs.etag }}</code></li>
+ <li>当前稿版次：<b>第 {{ obs.revision }} 版</b>；版本 ETag：<code>{{ obs.etag }}</code></li>
  <li>行数：{{ obs.row_count }}；区间：{{ obs.first_ts }} ~ {{ obs.last_ts }}</li>
  <li>发布时间：{{ obs.published_at }}</li>
 </ul>

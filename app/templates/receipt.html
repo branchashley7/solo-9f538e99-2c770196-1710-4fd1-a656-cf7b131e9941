@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>回执 · {{ rec.submission_id }}</title>
+<style>
+ body{font-family:system-ui,"Noto Sans CJK SC",sans-serif;margin:2rem;color:#222}
+ table{border-collapse:collapse;margin-top:1rem}
+ th,td{border:1px solid #ccc;padding:.35rem .6rem;font-size:.9rem;text-align:left;vertical-align:top;word-break:break-all}
+ th{background:#f0f4f8}
+ .ok{color:#047857;font-weight:600}.warn{color:#b45309;font-weight:600}
+ code{background:#f3f4f6;padding:0 .3rem}
+ pre{background:#f8fafc;border:1px solid #e2e8f0;padding:.8rem;overflow:auto}
+</style>
+</head>
+<body>
+<h1>送检回执</h1>
+<p><a href="{{ url_for('submissions_page') }}">← 返回送检登记</a></p>
+<table>
+<tr><th>送检号</th><td><code>{{ rec.submission_id }}</code></td></tr>
+<tr><th>源 URL</th><td><code>{{ rec.url }}</code></td></tr>
+<tr><th>版次</th><td>第 {{ rec.revision }} 版（ETag <code>{{ rec.etag }}</code>）</td></tr>
+<tr><th>状态</th><td class="{{ 'ok' if rec.status == 'confirmed' else 'warn' }}">{{ rec.status }}</td></tr>
+<tr><th>回执号</th><td>{% if rec.receipt_id %}<code>{{ rec.receipt_id }}</code>{% else %}—（待确认，凭原送检号恢复）{% endif %}</td></tr>
+<tr><th>登记时间</th><td>{{ rec.registered_at }}</td></tr>
+<tr><th>最近故障</th><td>{{ rec.last_error or '—' }}</td></tr>
+</table>
+{% if receipt %}
+<h2>接收端回执原文</h2>
+<pre>{{ receipt | tojson(indent=2) }}</pre>
+{% endif %}
+<h2>送检时固定的 CSV 原文（前 20 行预览）</h2>
+<pre>{% for line in rec.content.splitlines()[:20] %}{{ line }}
+{% endfor %}{% if rec.content.splitlines()|length > 20 %}…（共 {{ rec.content.splitlines()|length }} 行）{% endif %}</pre>
+</body>
+</html>

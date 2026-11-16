@@ -5,13 +5,28 @@ services:
       - "8080:8080"
     environment:
       SAMPLE_SOURCE_URL: http://source:9000/tide.csv
+      QC_BASE_URL: http://qc:9100
     volumes:
-      - appdata:/data        # 断点与 .part 持久化，容器重启后续传
+      - appdata:/data        # 断点、.part、观测多版归档与送检登记持久化
     depends_on:
       - source
+      - qc
   source:
     build: ./source
     ports:
       - "9000:9000"
+  qc:
+    build: ./qc
+    ports:
+      - "9100:9100"
+    environment:
+      QC_DATA: /data
+      QC_PORT: "9100"
+      # 入库后丢回执开关：默认关闭。置 1 后稿件仍 durably 入库，但响应返回 500，
+      # 演示客户端凭原送检号重试、走幂等分支取回原回执。也可在 qc 首页运行时切换。
+      LOSE_RECEIPT: "0"
+    volumes:
+      - qcdata:/data         # 质控库（稿件 + 回执）持久化，重启不丢
 volumes:
   appdata:
+  qcdata:

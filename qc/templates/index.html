@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>质控接收端 · 库内稿件</title>
+<style>
+ body{font-family:system-ui,"Noto Sans CJK SC",sans-serif;margin:2rem;color:#222}
+ table{border-collapse:collapse;width:100%;margin-top:1rem}
+ th,td{border:1px solid #ccc;padding:.35rem .6rem;font-size:.85rem;text-align:left;word-break:break-all}
+ th{background:#f0f4f8}
+ button{padding:.3rem .8rem;cursor:pointer}
+ .switch{padding:.6rem .9rem;border-radius:6px;margin:.5rem 0;display:inline-block}
+ .on{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+ .off{background:#ecfdf5;border:1px solid #6ee7b7;color:#047857}
+ code{background:#f3f4f6;padding:0 .3rem}
+</style>
+</head>
+<body>
+<h1>质控接收端 · 库内稿件</h1>
+<form method="post" action="{{ url_for('control') }}">
+  <span class="switch {{ 'on' if lose_receipt else 'off' }}">
+    入库后丢回执开关：
+    <label><input type="checkbox" name="lose_receipt" {{ 'checked' if lose_receipt }}>
+      开启后稿件仍 durably 入库，但响应返回 500（模拟回执丢失），客户端须凭原送检号重试取回原回执</label>
+    <button type="submit">应用</button>
+  </span>
+</form>
+<p>共 {{ items|length }} 份入库稿件 · <a href="{{ url_for('api_list') }}">JSON 列表</a> · <a href="{{ url_for('healthz') }}">healthz</a></p>
+<table>
+<tr><th>送检号 submission_id</th><th>源 URL</th><th>版次</th><th>行数</th><th>原文字节</th>
+    <th>原文 SHA-256</th><th>回执号 receipt_id</th><th>入库时间 (UTC)</th><th>操作</th></tr>
+{% for it in items %}
+<tr>
+ <td><code>{{ it.submission_id }}</code></td>
+ <td><code>{{ it.source_url }}</code></td>
+ <td>{{ it.revision }}</td>
+ <td>{{ it.row_count }}</td>
+ <td>{{ it.content_bytes }}</td>
+ <td><code>{{ it.content_sha256[:16] }}…</code></td>
+ <td><code>{{ it.receipt_id }}</code></td>
+ <td>{{ it.accepted_at }}</td>
+ <td><a href="{{ url_for('get_content', submission_id=it.submission_id) }}">核对原文</a>
+     · <a href="{{ url_for('get_receipt', submission_id=it.submission_id) }}">回执 JSON</a></td>
+</tr>
+{% else %}
+<tr><td colspan="9">暂无入库稿件</td></tr>
+{% endfor %}
+</table>
+</body>
+</html>

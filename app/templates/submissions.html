@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>送检登记与回执</title>
+<style>
+ body{font-family:system-ui,"Noto Sans CJK SC",sans-serif;margin:2rem;color:#222}
+ table{border-collapse:collapse;width:100%;margin-top:1rem}
+ th,td{border:1px solid #ccc;padding:.35rem .6rem;font-size:.85rem;text-align:left;vertical-align:top;word-break:break-all}
+ th{background:#f0f4f8}
+ .ok{color:#047857;font-weight:600}.warn{color:#b45309;font-weight:600}
+ code{background:#f3f4f6;padding:0 .3rem}
+ button{padding:.3rem .8rem;cursor:pointer}
+ form.inline{display:inline}
+ .flash-ok{background:#ecfdf5;border:1px solid #6ee7b7;padding:.4rem .8rem;margin:.3rem 0}
+ .flash-error{background:#fef2f2;border:1px solid #fca5a5;padding:.4rem .8rem;margin:.3rem 0}
+</style>
+</head>
+<body>
+<h1>送检登记与回执</h1>
+{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% for cat, m in msgs %}<div class="flash-{{cat}}">{{m}}</div>{% endfor %}
+{% endwith %}
+<p><a href="{{ url_for('index') }}">← 返回采集台</a> ·
+   质控接收端：<code>{{ qc_base_url }}</code>（库内稿件可在其首页核对）</p>
+<form method="post" action="{{ url_for('recover_all_pending') }}">
+  <button type="submit">恢复全部待确认送检（凭原送检号重试）</button>
+</form>
+<table>
+<tr><th>#</th><th>送检号</th><th>源 URL</th><th>版次</th><th>当前稿版次</th>
+    <th>状态</th><th>回执号</th><th>登记时间</th><th>最近故障/备注</th><th>操作</th></tr>
+{% for s in submissions %}
+<tr>
+ <td>{{ s.id }}</td>
+ <td><code>{{ s.submission_id }}</code></td>
+ <td><code>{{ s.url }}</code></td>
+ <td>第 {{ s.revision }} 版</td>
+ <td>{{ current_rev.get(s.url) }}</td>
+ <td class="{{ 'ok' if s.status == 'confirmed' else 'warn' }}">{{ s.status }}</td>
+ <td>{% if s.receipt_id %}<a href="{{ url_for('receipt_page', submission_id=s.submission_id) }}"><code>{{ s.receipt_id }}</code></a>{% else %}—{% endif %}</td>
+ <td>{{ s.registered_at }}</td>
+ <td>{{ s.last_error or '—' }}</td>
+ <td>
+   {% if s.status == 'awaiting_receipt' %}
+   <form class="inline" method="post"
+         action="{{ url_for('recover_one', submission_id=s.submission_id) }}">
+     <button>恢复送检</button>
+   </form>
+   {% else %}
+   <a href="{{ url_for('receipt_page', submission_id=s.submission_id) }}">查看回执</a>
+   {% endif %}
+ </td>
+</tr>
+{% else %}
+<tr><td colspan="10">暂无送检记录</td></tr>
+{% endfor %}
+</table>
+<p><small>规则：先本地登记后发请求，登记失败不发请求；同版重复送检沿用原送检号；
+未取得回执一律保持“待确认”，重启后仍凭原号、用登记原文恢复，不会改用后来采到的内容。</small></p>
+</body>
+</html>
